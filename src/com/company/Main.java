@@ -21,6 +21,8 @@ public class Main {
 
         System.out.println(H);
 
+        System.out.println("testing intelliJ's built in git");
+
         /*
 5,6,2,100.0
 0.20,0.50,2.51,1.12,6.98,4.43
