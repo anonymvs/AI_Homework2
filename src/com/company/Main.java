@@ -1,5 +1,11 @@
 package com.company;
 
+import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.linear.AbstractRealMatrix;
+import org.apache.commons.math3.linear.AnyMatrix;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -17,11 +23,9 @@ public class Main {
         int L = LFromInput(input);
         double Beta = BetaFromInput(input);
 
-        ArrayList<List<Double>> H = heightmapFromInput(input, I, J);
+        ArrayList<List<Double>> H2dl = heightmapFromInput(input, I, J);
 
-        System.out.println(H);
-
-        System.out.println("testing intelliJ's built in git");
+        Array2DRowRealMatrix H = fromMatrixToMatrix(H2dl, I, J);
 
         /*
 5,6,2,100.0
@@ -81,6 +85,16 @@ public class Main {
                 row.add(Double.parseDouble(input.get(i+1)[j]));
             }
             ret.add(row);
+        }
+        return ret;
+    }
+
+    public static Array2DRowRealMatrix fromMatrixToMatrix(ArrayList<List<Double>> input, int I, int J) {
+        Array2DRowRealMatrix ret = new Array2DRowRealMatrix();
+        for(int i = 0; i < I; i++) {
+            for(int j = 0; j < J; j++) {
+                ret.setEntry(i, j, input.get(i).get(j));
+            }
         }
         return ret;
     }
