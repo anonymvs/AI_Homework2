@@ -1,9 +1,6 @@
 package com.company;
 
-import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.distribution.MultivariateNormalDistribution;
-import org.apache.commons.math3.distribution.NormalDistribution;
-import org.apache.commons.math3.geometry.VectorFormat;
 import org.apache.commons.math3.linear.*;
 
 import java.io.BufferedReader;
@@ -31,7 +28,34 @@ public class Main {
         RealMatrix U = generateUV(I, L, alphaU);
         RealMatrix V = generateUV(J, L, alphaV);
 
+        ArrayList<RealMatrix> UMatrixList = new ArrayList<>();
+        ArrayList<RealMatrix> VMatrixList = new ArrayList<>();
+        for(int i = 0; i < 25; i++) {
+            U = update(I, J, L, V, H, alphaU, beta);
+            V = update(I, J, L, U, H, alphaV, beta);
+            if(i > 10) {
+                UMatrixList.add(U);
+                VMatrixList.add(V);
+            }
+        }
+        RealMatrix finalU = MatrixUtils.createRealMatrix(I, L);
+        for(int i = 0; i < I; i++) {
+            finalU.setColumn(i, new ArrayRealVector(L, 0.0).getDataRef());
+        }
+        RealMatrix finalV = MatrixUtils.createRealMatrix(I, L);
+        for(int i = 0; i < I; i++) {
+            finalU.setColumn(i, new ArrayRealVector(L, 0.0).getDataRef());
+        }
+        for(int i = 0; i < 15; i++) {
+            finalU = finalU.add(UMatrixList.get(i));
+            finalV = finalV.add(VMatrixList.get(i));
+        }
+        finalU.scalarMultiply(1 / 15);
+        finalV.scalarMultiply(1 / 15);
 
+        writeOut(finalU.transpose());
+        System.out.println();
+        writeOut(finalV.transpose());
 
 
         /*
@@ -43,6 +67,21 @@ public class Main {
 4.89,7.30,3.20,2.38,3.04,0.73
 
          */
+
+    }
+
+    public static void writeOut(RealMatrix M) {
+        double[][] matrix = M.getData();
+
+
+        for(int i = 0; i < M.getRowDimension(); i++) {
+            for(int j = 0; j < M.getColumnDimension(); j++) {
+                if(j != M.getColumnDimension()-1)
+                    System.out.print(matrix[i][j] + ",");
+            }
+            System.out.print(matrix[i][M.getColumnDimension() - 1]);
+            System.out.println();
+        }
 
     }
 
