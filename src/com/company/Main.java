@@ -20,7 +20,7 @@ public class Main {
         int L = LFromInput(input);
         double beta = BetaFromInput(input);
         double alphaU = 0.0001;
-        double alphaV = 0.001;
+        double alphaV = 0.0001;
 
         ArrayList<List<Double>> H2dl = heightmapFromInput(input, I, J);
 
@@ -31,31 +31,31 @@ public class Main {
         ArrayList<RealMatrix> UMatrixList = new ArrayList<>();
         ArrayList<RealMatrix> VMatrixList = new ArrayList<>();
         for(int i = 0; i < 25; i++) {
-            U = update(I, J, L, V, H, alphaU, beta);
-            V = update(I, J, L, U, H, alphaV, beta);
+            U = update("U", I, J, L, V, H, alphaU, beta);
+            V = update("V", I, J, L, U, H, alphaV, beta);
             if(i > 10) {
                 UMatrixList.add(U);
                 VMatrixList.add(V);
             }
         }
-        RealMatrix finalU = MatrixUtils.createRealMatrix(I, L);
+        RealMatrix finalU = MatrixUtils.createRealMatrix(L, I);
         for(int i = 0; i < I; i++) {
             finalU.setColumn(i, new ArrayRealVector(L, 0.0).getDataRef());
         }
-        RealMatrix finalV = MatrixUtils.createRealMatrix(I, L);
+        RealMatrix finalV = MatrixUtils.createRealMatrix(L, J);
         for(int i = 0; i < I; i++) {
             finalU.setColumn(i, new ArrayRealVector(L, 0.0).getDataRef());
         }
-        for(int i = 0; i < 15; i++) {
+        for(int i = 0; i < 14; i++) {
             finalU = finalU.add(UMatrixList.get(i));
             finalV = finalV.add(VMatrixList.get(i));
         }
         finalU.scalarMultiply(1 / 15);
         finalV.scalarMultiply(1 / 15);
 
-        writeOut(finalU.transpose());
+        writeOut(finalU);
         System.out.println();
-        writeOut(finalV.transpose());
+        writeOut(finalV);
 
 
         /*
@@ -166,14 +166,24 @@ public class Main {
         return MatrixUtils.createRealMatrix(ret.transpose().getData());
     }
 
-    public static RealMatrix update(int I, int J, int L, RealMatrix V, RealMatrix H, double alphaU, double beta ) {
+    public static RealMatrix update(String matrix, int argI, int argJ, int L, RealMatrix V, RealMatrix H, double alphaU, double beta ) {
+        int I = 0;
+        int J = 0;
+        if(matrix.equals("U")) {
+            I = argI;
+            J = argJ;
+        } else if(matrix.equals("V")) {
+            I = argJ;
+            J = argI;
+        }
+
         RealMatrix ret = MatrixUtils.createRealMatrix(L, I);
         ArrayList<RealMatrix> lambdaList = new ArrayList<>();
         ArrayList<ArrayRealVector> psiList = new ArrayList<>();
 
         for(int i = 0; i < I; i++) {
-            lambdaList.add(generateLambdaList(I, J, L, V, alphaU, beta));
-            psiList.add(generatePsiList(J, L, lambdaList.get(i), H, V, beta, i));
+            lambdaList.add(generateLambdaList(J, L, V, alphaU, beta));
+            psiList.add(generatePsiList(J, L, lambdaList.get(i), H, V, beta, i, matrix));
             MultivariateNormalDistribution mnd = new MultivariateNormalDistribution(psiList.get(i).getDataRef(), lambdaList.get(i).getData());
             ret.setColumn(i, mnd.sample());
         }
@@ -181,7 +191,7 @@ public class Main {
         return ret;
     }
 
-    public static RealMatrix generateLambdaList(int I, int J, int L, RealMatrix V, double alphaU, double beta) {
+    public static RealMatrix generateLambdaList(int J, int L, RealMatrix V, double alphaU, double beta) {
         RealMatrix rm = MatrixUtils.createRealMatrix(L, L);
         for(int i = 0; i < L; i++) {
             rm.setColumn(i, new ArrayRealVector(L, 0.0).getDataRef());
@@ -189,8 +199,8 @@ public class Main {
         RealMatrix vj = MatrixUtils.createRealMatrix(L, 1);
         RealMatrix vjT = MatrixUtils.createRealMatrix(1, L);
         for(int i = 0; i < J; i++) {
-            vj.setColumn(i,V.getColumn(i));
-            vjT.setRow(i,V.getColumn(i));
+            vj.setColumn(0,V.getColumn(i));
+            vjT.setRow(0,V.getColumn(i));
             RealMatrix temp = MatrixUtils.createRealMatrix(vj.multiply(vjT).getData());
             rm = rm.add(temp);
         }
@@ -201,12 +211,15 @@ public class Main {
         return rm;
     }
 
-    private static ArrayRealVector generatePsiList(int J, int L, RealMatrix lambda, RealMatrix H, RealMatrix V, double beta, int i) {
+    private static ArrayRealVector generatePsiList(int J, int L, RealMatrix lambda, RealMatrix H, RealMatrix V, double beta, int i, String matrix) {
         ArrayRealVector ret;
 
         ArrayRealVector arv = new ArrayRealVector(L, 0.0);
         for(int j = 0; j < J; j++) {
-            arv.add(V.getColumnVector(j).mapMultiply(H.getColumn(j)[i]));
+            if(matrix.equals("U"))
+                arv.add(V.getColumnVector(j).mapMultiply(H.getColumn(j)[i]));
+            if(matrix.equals("V"))
+                arv.add(V.getColumnVector(j).mapMultiply(H.getColumn(i)[j]));
         }
         arv.mapMultiply(beta);
         RealMatrix lambdaInverse = MatrixUtils.inverse(lambda);
