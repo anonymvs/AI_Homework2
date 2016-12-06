@@ -8,19 +8,21 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 public class Main {
 
     public static void main(String[] args) throws IOException {
         ArrayList<String[]> input;
-        input = readingInputFromConsole();
+        //input = readingInputFromConsole();
+        input = readingInputFromConsoleScanner();
 
         int I = IFromInput(input);
         int J = JFromInput(input);
         int L = LFromInput(input);
         double beta = BetaFromInput(input);
-        double alphaU = 0.0001;
-        double alphaV = 0.0001;
+        double alphaU = 1;
+        double alphaV = 1;
 
         ArrayList<List<Double>> H2dl = heightmapFromInput(input, I, J);
 
@@ -53,9 +55,9 @@ public class Main {
         finalU.scalarMultiply(1 / 15);
         finalV.scalarMultiply(1 / 15);
 
-        writeOut(finalU);
+        writeOut(finalU.transpose());
         System.out.println();
-        writeOut(finalV);
+        writeOut(finalV.transpose());
 
 
         /*
@@ -89,10 +91,9 @@ public class Main {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         ArrayList<String[]> inputstr = new ArrayList<String[]>();
         String line;
-        int n = 0;
 
         line = br.readLine();
-        inputstr.add(n, line.split(","));
+        inputstr.add(line.split(","));
 
         boolean b = true;
         while(b) {
@@ -105,6 +106,18 @@ public class Main {
             }
         }
         return inputstr;
+    }
+
+    public static ArrayList<String[]> readingInputFromConsoleScanner() throws IOException {
+        ArrayList<String[]> input = new ArrayList<>();
+        Scanner sc = new Scanner(System.in);
+        String line;
+        while(sc.hasNextLine()) {
+            line = sc.nextLine();
+            input.add(line.split(","));
+        }
+
+        return input;
     }
 
     public static int IFromInput(ArrayList<String[]> input) {
@@ -152,7 +165,7 @@ public class Main {
 
         RealMatrix rm = MatrixUtils.createRealIdentityMatrix(L);
         RealMatrix alphaMatrix = MatrixUtils.createRealMatrix(rm.getData());
-        alphaMatrix.scalarMultiply( 1 / alpha);
+        alphaMatrix = alphaMatrix.scalarMultiply( 1 / alpha);
 
         MultivariateNormalDistribution mnd = new MultivariateNormalDistribution(nullVector.getDataRef(), alphaMatrix.getData());
 
@@ -204,10 +217,10 @@ public class Main {
             RealMatrix temp = MatrixUtils.createRealMatrix(vj.multiply(vjT).getData());
             rm = rm.add(temp);
         }
-        rm.scalarMultiply(beta);
+        rm = rm.scalarMultiply(beta);
         RealMatrix alphaUIdentityMatrix = MatrixUtils.createRealIdentityMatrix(L);
-        alphaUIdentityMatrix.scalarMultiply(alphaU);
-        rm.add(alphaUIdentityMatrix);
+        alphaUIdentityMatrix = alphaUIdentityMatrix.scalarMultiply(alphaU);
+        rm = rm.add(alphaUIdentityMatrix);
         return rm;
     }
 
@@ -217,13 +230,12 @@ public class Main {
         ArrayRealVector arv = new ArrayRealVector(L, 0.0);
         for(int j = 0; j < J; j++) {
             if(matrix.equals("U"))
-                arv.add(V.getColumnVector(j).mapMultiply(H.getColumn(j)[i]));
+                arv = arv.add(V.getColumnVector(j).mapMultiply(H.getColumn(j)[i]));
             if(matrix.equals("V"))
-                arv.add(V.getColumnVector(j).mapMultiply(H.getColumn(i)[j]));
+                arv = arv.add(V.getColumnVector(j).mapMultiply(H.getColumn(i)[j]));
         }
-        arv.mapMultiply(beta);
         RealMatrix lambdaInverse = MatrixUtils.inverse(lambda);
-        ret = new ArrayRealVector(lambdaInverse.preMultiply(arv));
+        ret = new ArrayRealVector(lambdaInverse.preMultiply(arv.mapMultiplyToSelf(beta)));
         return ret;
     }
 }
