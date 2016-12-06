@@ -30,12 +30,14 @@ public class Main {
         RealMatrix U = generateUV(I, L, alphaU);
         RealMatrix V = generateUV(J, L, alphaV);
 
+        int burnin = 18;
+        int iteration = 20;
         ArrayList<RealMatrix> UMatrixList = new ArrayList<>();
         ArrayList<RealMatrix> VMatrixList = new ArrayList<>();
-        for(int i = 0; i < 25; i++) {
+        for(int i = 0; i < iteration; i++) {
             U = update("U", I, J, L, V, H, alphaU, beta);
             V = update("V", I, J, L, U, H, alphaV, beta);
-            if(i > 10) {
+            if(i > burnin) {
                 UMatrixList.add(U);
                 VMatrixList.add(V);
             }
@@ -45,15 +47,15 @@ public class Main {
             finalU.setColumn(i, new ArrayRealVector(L, 0.0).getDataRef());
         }
         RealMatrix finalV = MatrixUtils.createRealMatrix(L, J);
-        for(int i = 0; i < I; i++) {
-            finalU.setColumn(i, new ArrayRealVector(L, 0.0).getDataRef());
+        for(int i = 0; i < J; i++) {
+            finalV.setColumn(i, new ArrayRealVector(L, 0.0).getDataRef());
         }
-        for(int i = 0; i < 14; i++) {
+        for(int i = 0; i < iteration-burnin-1; i++) {
             finalU = finalU.add(UMatrixList.get(i));
             finalV = finalV.add(VMatrixList.get(i));
         }
-        finalU.scalarMultiply(1 / 15);
-        finalV.scalarMultiply(1 / 15);
+        finalU.scalarMultiply(1 / iteration-burnin);
+        finalV.scalarMultiply(1 / iteration-burnin);
 
         writeOut(finalU.transpose());
         System.out.println();
@@ -197,7 +199,7 @@ public class Main {
         for(int i = 0; i < I; i++) {
             lambdaList.add(generateLambdaList(J, L, V, alphaU, beta));
             psiList.add(generatePsiList(J, L, lambdaList.get(i), H, V, beta, i, matrix));
-            MultivariateNormalDistribution mnd = new MultivariateNormalDistribution(psiList.get(i).getDataRef(), lambdaList.get(i).getData());
+            MultivariateNormalDistribution mnd = new MultivariateNormalDistribution(psiList.get(i).getDataRef(), MatrixUtils.inverse(lambdaList.get(i)).getData());
             ret.setColumn(i, mnd.sample());
         }
 
